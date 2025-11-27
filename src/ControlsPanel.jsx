@@ -5,6 +5,7 @@ import { SERVER_CONFIG } from "./config";
 
 export default function ControlsPanel({ params, setParams, modes }) {
   const [serverIP, setServerIP] = useState("loading...");
+  const [videoDevices, setVideoDevices] = useState([]);
 
   // --- Récupération IP serveur ---
   useEffect(() => {
@@ -18,6 +19,17 @@ export default function ControlsPanel({ params, setParams, modes }) {
   useEffect(() => {
     set({ "Server IP": serverIP });
   }, [serverIP]);
+
+  // --- Récupération liste webcams ---
+  useEffect(() => {
+    navigator.mediaDevices
+      .enumerateDevices()
+      .then((devices) => {
+        const cams = devices.filter((d) => d.kind === "videoinput");
+        setVideoDevices(cams);
+      })
+      .catch((err) => console.error("Device error:", err));
+  }, []);
 
   const isConnected =
     serverIP && serverIP !== "loading..." && serverIP !== "error";
@@ -72,23 +84,29 @@ export default function ControlsPanel({ params, setParams, modes }) {
         onChange: (v) => setParams((p) => ({ ...p, layout: v })),
       },
 
-      mirrorH: {
-        label: "Mirror H",
-        value: params.mirrorH ?? false,
-        onChange: (v) => setParams((p) => ({ ...p, mirrorH: v })),
-      },
+      // --- Nouveau dossier Transform ---
+      Transform: folder(
+        {
+          mirrorH: {
+            label: "Mirror H",
+            value: params.mirrorH ?? false,
+            onChange: (v) => setParams((p) => ({ ...p, mirrorH: v })),
+          },
 
-      mirrorV: {
-        label: "Mirror V",
-        value: params.mirrorV ?? false,
-        onChange: (v) => setParams((p) => ({ ...p, mirrorV: v })),
-      },
+          mirrorV: {
+            label: "Mirror V",
+            value: params.mirrorV ?? false,
+            onChange: (v) => setParams((p) => ({ ...p, mirrorV: v })),
+          },
 
-      invert: {
-        label: "Invert",
-        value: params.invert ?? false,
-        onChange: (v) => setParams((p) => ({ ...p, invert: v })),
-      },
+          invert: {
+            label: "Invert",
+            value: params.invert ?? false,
+            onChange: (v) => setParams((p) => ({ ...p, invert: v })),
+          },
+        },
+        { collapsed: true }
+      ),
 
       cellSize: {
         label: "Zoom",
@@ -102,9 +120,9 @@ export default function ControlsPanel({ params, setParams, modes }) {
       "Fit to Window": button(() => fitToWindow()),
     };
 
-    // --- 🔥 Mode Video Upload : threshold + bouton upload ---
+    // --- Mode Video Upload ---
     if (params.mode === "Video Upload") {
-      config["Video Mode"] = folder(
+      config["Video settings"] = folder(
         {
           threshold: {
             label: "Threshold",
@@ -115,17 +133,29 @@ export default function ControlsPanel({ params, setParams, modes }) {
             onChange: (v) => setParams((p) => ({ ...p, threshold: v })),
           },
           uploadVideo: button(() => {
-            params.triggerUpload?.(); // Trigger fourni par VideoUpload.jsx
+            params.triggerUpload?.();
           }),
         },
         { collapsed: false }
       );
     }
 
-    // --- Webcam Mode : threshold uniquement ---
+    // --- Mode Webcam ---
     if (params.mode === "Webcam") {
-      config["Video Mode"] = folder(
+      config["Webcam Settings"] = folder(
         {
+          camera: {
+            label: "Camera",
+            options: Object.fromEntries(
+              videoDevices.map((d) => [
+                d.label || `Camera ${d.deviceId}`,
+                d.deviceId,
+              ])
+            ),
+            value: params.selectedCameraId ?? videoDevices[0]?.deviceId,
+            onChange: (v) => setParams((p) => ({ ...p, selectedCameraId: v })),
+          },
+
           threshold: {
             label: "Threshold",
             value: params.threshold ?? 128,
@@ -179,8 +209,9 @@ export default function ControlsPanel({ params, setParams, modes }) {
     );
 
     return config;
-  }, [params, serverIP, modes]);
+  }, [params, serverIP, videoDevices, modes]);
 
+  // --- Fit auto si layout ou grid change ---
   useEffect(() => {
     fitToWindow();
   }, [

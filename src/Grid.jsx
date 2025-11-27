@@ -65,7 +65,7 @@ const Grid = forwardRef(function Grid({ params, setParams }, ref) {
         const matrix = applyTransforms(grid.current, params);
         wsRef.current.send(JSON.stringify({ type: "matrix", payload: matrix }));
       }
-    }, 16);
+    }, 60);
     return () => clearInterval(loop);
   }, []);
 
@@ -148,14 +148,16 @@ const Grid = forwardRef(function Grid({ params, setParams }, ref) {
       if (layout === "Portrait") ctx.rotate(-Math.PI / 2);
       ctx.translate(-contentWidth / 2, -contentHeight / 2);
 
-      // Points actifs
+      const view = applyTransforms(grid.current, params);
+
       for (let y = 0; y < totalRows; y++) {
         for (let x = 0; x < totalCols; x++) {
           const cx = x * cellSize + cellSize / 2;
           const cy = y * cellSize + cellSize / 2;
           const r = cellSize / 2 - 2;
+
           ctx.beginPath();
-          ctx.fillStyle = grid.current[y][x].active ? "#fff" : "#000";
+          ctx.fillStyle = view[y][x] ? "#fff" : "#000";
           ctx.arc(cx, cy, r, 0, Math.PI * 2);
           ctx.fill();
         }

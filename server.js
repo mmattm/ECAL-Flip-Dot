@@ -86,7 +86,7 @@ width = display.width;
 height = display.height;
 
 console.log(`Display size: ${width} x ${height}`);
-console.log(display.info);
+//console.log(display.info);
 
 // 🧠 Stockage du dernier payload pour éviter envois inutiles
 let previousPayload = null;
@@ -134,11 +134,13 @@ wss.on("connection", (ws, req) => {
         if (changed) {
           previousPayload = payload;
 
-          console.log(payload);
+          //console.log(payload);
           const timestamp = new Date().toLocaleTimeString("fr-CH", {
             hour12: false,
             timeZone: "Europe/Zurich",
           });
+
+          console.log(`📥 Received matrix from ${clientIP} at ${timestamp}`);
 
           const rows = payload.length;
           const cols = payload[0]?.length || 0;
@@ -150,7 +152,7 @@ wss.on("connection", (ws, req) => {
             return;
           }
 
-          renderAsciiMatrix(payload, clientIP, timestamp);
+          // renderAsciiMatrix(payload, clientIP, timestamp);
 
           // OK → on peut envoyer
           display.send(payload);
