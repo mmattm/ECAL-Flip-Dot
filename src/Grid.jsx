@@ -67,7 +67,7 @@ const Grid = forwardRef(function Grid({ params, setParams }, ref) {
       }
     }, 60);
     return () => clearInterval(loop);
-  }, []);
+  }, [params]);
 
   function applyTransforms(matrix, params) {
     let m = matrix.map((row) => row.map((cell) => (cell.active ? 1 : 0)));
