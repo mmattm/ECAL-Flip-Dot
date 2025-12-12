@@ -48,7 +48,7 @@ const Grid = forwardRef(function Grid({ params, setParams }, ref) {
   // --- Connexion WebSocket ---
   useEffect(() => {
     const { IP, WS_PORT } = SERVER_CONFIG;
-    const ws = new WebSocket(`ws://${IP}:${WS_PORT}`);
+    const ws = new WebSocket(`wss://${IP}:${WS_PORT}`);
     wsRef.current = ws;
 
     ws.onopen = () => console.log("✅ WebSocket connected to", IP);
@@ -65,9 +65,9 @@ const Grid = forwardRef(function Grid({ params, setParams }, ref) {
         const matrix = applyTransforms(grid.current, params);
         wsRef.current.send(JSON.stringify({ type: "matrix", payload: matrix }));
       }
-    }, 60);
+    }, 40);
     return () => clearInterval(loop);
-  }, [params]);
+  }, []);
 
   function applyTransforms(matrix, params) {
     let m = matrix.map((row) => row.map((cell) => (cell.active ? 1 : 0)));

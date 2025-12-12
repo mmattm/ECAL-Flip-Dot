@@ -1,18 +1,15 @@
 /* eslint-env node */
 import express from "express";
+import http from "http";
 import { WebSocketServer } from "ws";
 import cors from "cors";
 import os from "os";
-import https from "https";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 
 // 🔄 AUTO-FLIP MODE
 let autoFlipEnabled = true;
 let autoFlipState = false;
 
-// 🔍 Obtenir IP locale du serveur
+// 🔍 Obtenir l’adresse IP locale du serveur
 const getLocalIPAddress = () => {
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
@@ -23,12 +20,12 @@ const getLocalIPAddress = () => {
   return "127.0.0.1";
 };
 
-// ⬇️ Flipdot drivers
+// ⬇️ Importation Flipdot
 import Display from "./flipdisc/display.js";
 import SegmentDisplay from "./flipdisc/segmentDisplay.js";
 import * as Panels from "./flipdisc/panels/index.js";
 
-// 🧩 Création display
+// 🧩 Création du display matériel
 const createDisplay = (layout, devicePath, options = {}) => {
   return options.panel?.type?.style === Panels.PanelStyles.segment
     ? new SegmentDisplay(layout, devicePath, options)
@@ -37,29 +34,14 @@ const createDisplay = (layout, devicePath, options = {}) => {
 
 let width, height;
 
-// ⚙️ Express App
+// ⚙️ Serveur HTTP + WebSocket
 const app = express();
 app.use(cors({ origin: "*" }));
 
-// ---- HTTPS CONFIG ----
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Charge les certificats générés par vite-plugin-mkcert
-const sslOptions = {
-  key: fs.readFileSync(
-    "./dev.pem" // <-- chemin original restauré
-  ),
-  cert: fs.readFileSync(
-    "./cert.pem" // <-- chemin original restauré
-  ),
-};
-
-// Crée serveur HTTPS + WebSocket sécurisé
-const server = https.createServer(sslOptions, app);
+const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-// ---- Flipdot Layout ----
+// 🔌 Configuration Flipdot
 const layout = [
   [1, 7, 13],
   [2, 8, 14],
@@ -98,15 +80,15 @@ const opt = {
 };
 
 const display = createDisplay(layout, dev, opt);
+
 width = display.width;
 height = display.height;
-
 console.log(`Display size: ${width} x ${height}`);
 
-// 🧠 Stocker dernière frame envoyée
+// 🧠 Stockage du dernier payload
 let previousPayload = null;
 
-// 📡 WebSocket sécurisé (WSS)
+// 📡 Connexion WebSocket
 wss.on("connection", (ws, req) => {
   const clientIP = req.socket.remoteAddress;
   console.log(`🟢 Client connected: ${clientIP}`);
@@ -120,7 +102,10 @@ wss.on("connection", (ws, req) => {
       const { type, payload } = JSON.parse(data);
 
       if (type === "matrix" && Array.isArray(payload)) {
-        if (JSON.stringify(payload) !== JSON.stringify(previousPayload)) {
+        const changed =
+          JSON.stringify(payload) !== JSON.stringify(previousPayload);
+
+        if (changed) {
           previousPayload = payload;
 
           const rows = payload.length;
@@ -128,8 +113,8 @@ wss.on("connection", (ws, req) => {
 
           if (rows !== height || cols !== width) {
             console.error("❌ MATRIX SIZE MISMATCH");
-            console.error(`→ Received: ${cols} x ${rows}`);
-            console.error(`→ Expected: ${width} x ${height}`);
+            console.error(`→ Payload received: ${cols} x ${rows}`);
+            console.error(`→ Expected display : ${width} x ${height}`);
             return;
           }
 
@@ -146,18 +131,34 @@ wss.on("connection", (ws, req) => {
   });
 });
 
-// 🌐 Route IP
+// 🌐 Route /ip
 app.get("/ip", (req, res) => {
   res.json({ ip: getLocalIPAddress() });
 });
 
-// 🚀 Lancement serveur HTTPS + WSS
+// 🚀 Lancement du serveur HTTP + WS
 server.listen(3000, "0.0.0.0", () => {
   const ip = getLocalIPAddress();
   console.log("============================================");
-  console.log("  🔒 Flipdot Server Running (HTTPS + WSS)");
+  console.log("  🟡 Flipdot Server Running (HTTP + WS)");
   console.log("============================================");
-  console.log(`🌐 HTTPS available at:     https://${ip}:3000`);
-  console.log(`🔌 Secure WebSocket WSS:   wss://${ip}:3000`);
+  console.log(`🌐 HTTP available at:  http://${ip}:3000`);
+  console.log(`🔌 WebSocket (WS):     ws://${ip}:3000`);
   console.log("============================================");
 });
+
+// AUTO FLIP (désactivé)
+const startAutoFlip = () => {
+  setInterval(() => {
+    if (!autoFlipEnabled) return;
+
+    const matrix = Array.from({ length: height }, () =>
+      Array.from({ length: width }, () => (autoFlipState ? 1 : 0))
+    );
+
+    autoFlipState = !autoFlipState;
+    display.send(matrix);
+  }, 1000);
+};
+
+//startAutoFlip();

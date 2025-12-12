@@ -10,7 +10,7 @@ export default function ControlsPanel({ params, setParams, modes }) {
   // --- Récupération IP serveur ---
   useEffect(() => {
     const { IP, HTTP_PORT } = SERVER_CONFIG;
-    fetch(`http://${IP}:${HTTP_PORT}/ip`)
+    fetch(`https://${IP}:${HTTP_PORT}/ip`)
       .then((res) => res.json())
       .then((data) => setServerIP(data.ip))
       .catch(() => setServerIP("error"));

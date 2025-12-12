@@ -7,7 +7,7 @@ import VideoUpload from "./examples/VideoUpload";
 import Webcam from "./examples/Webcam";
 
 export const SERVER_CONFIG = {
-  IP: "localhost",
+  IP: "localhost", // localhost for dev
   HTTP_PORT: 3000,
   WS_PORT: 3000,
 };
