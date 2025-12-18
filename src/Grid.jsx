@@ -1,6 +1,5 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { SERVER_CONFIG } from "./config";
-import { apply } from "p5";
 
 const Grid = forwardRef(function Grid({ params, setParams }, ref) {
   const canvasRef = useRef(null);
