@@ -8,10 +8,6 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// 🔄 AUTO-FLIP MODE
-let autoFlipEnabled = true;
-let autoFlipState = false;
-
 // 🔍 Obtenir IP locale du serveur
 const getLocalIPAddress = () => {
   const interfaces = os.networkInterfaces();
@@ -46,13 +42,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Charge les certificats générés par vite-plugin-mkcert
+const certDir = path.join(os.homedir(), ".vite-plugin-mkcert");
+
 const sslOptions = {
-  key: fs.readFileSync(
-    "./dev.pem" // <-- chemin original restauré
-  ),
-  cert: fs.readFileSync(
-    "./cert.pem" // <-- chemin original restauré
-  ),
+  key: fs.readFileSync(path.join(certDir, "dev.pem")),
+  cert: fs.readFileSync(path.join(certDir, "cert.pem")),
 };
 
 // Crée serveur HTTPS + WebSocket sécurisé
