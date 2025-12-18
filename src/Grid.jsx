@@ -1,5 +1,6 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { SERVER_CONFIG } from "./config";
+import { apply } from "p5";
 
 const Grid = forwardRef(function Grid({ params, setParams }, ref) {
   const canvasRef = useRef(null);
@@ -67,7 +68,7 @@ const Grid = forwardRef(function Grid({ params, setParams }, ref) {
       }
     }, 40);
     return () => clearInterval(loop);
-  }, []);
+  }, [params]);
 
   function applyTransforms(matrix, params) {
     let m = matrix.map((row) => row.map((cell) => (cell.active ? 1 : 0)));
